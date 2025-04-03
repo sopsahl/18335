@@ -17,7 +17,7 @@ Launch a Julia environment in the cloud: [![Binder](https://mybinder.org/badge_l
 
 **Prerequisites**: Understanding of linear algebra ([18.06](http://web.mit.edu/18.06/www/), [18.700](http://ocw.mit.edu/OcwWeb/Mathematics/18-700Fall-2005/CourseHome/), or equivalents). 18.335 is a graduate-level subject, however, so much more mathematical maturity, ability to deal with abstractions and proofs, and general exposure to mathematics is assumed than for 18.06!
 
-**Textbook**: The primary textbook for the course is [_Numerical Linear Algebra_ by Trefethen and Bau](http://www.amazon.com/Numerical-Linear-Algebra-Lloyd-Trefethen/dp/0898713617). For a classical (and rigorous) treatment, see Nick Higham's [Accuracy and Stability of Numerical Algorithms](https://epubs.siam.org/doi/book/10.1137/1.9780898718027).
+**Textbook**: The primary textbook for the course is [_Numerical Linear Algebra_ by Trefethen and Bau](https://mit.primo.exlibrisgroup.com/discovery/fulldisplay?docid=alma990008205740106761&context=L&vid=01MIT_INST:MIT&lang=en&search_scope=all&adaptor=Local%20Search%20Engine&isFrbr=true&tab=all&query=any,contains,numerical%20linear%20algebra&sortby=date_d&facet=frbrgroupid,include,9020987051618639766&offset=0). For a classical (and rigorous) treatment, see Higham's [Accuracy and Stability of Numerical Algorithms](https://epubs.siam.org/doi/book/10.1137/1.9780898718027), and Golub and Uhlig's [Matrix Computations](https://github.com/CompPhysics/ComputationalPhysicsMSU/blob/master/doc/Lectures/Golub%2C%20Van%20Loan%20-%20Matrix%20Computations.pdf). For a contemporary perspective, see Solomon's [Numerical Algorithms](https://people.csail.mit.edu/jsolomon/share/book/numerical_book.pdf).
 
 **Other Reading**: Previous terms can be found in [branches of the 18335 git repository](https://github.com/mitmath/18335/branches). The [course notes from 18.335 in much earlier terms](https://ocw.mit.edu/courses/mathematics/18-335j-introduction-to-numerical-methods-fall-2010/) can be found on OpenCourseWare. For a review of iterative methods, the online books [Templates for the Solution of Linear Systems](http://www.netlib.org/linalg/html_templates/Templates.html) (Barrett et al.) and [Templates for the Solution of Algebraic Eigenvalue Problems](http://www.cs.utk.edu/~dongarra/etemplates/book.html) (Bai et al.) are useful surveys.
 
@@ -34,19 +34,19 @@ Launch a Julia environment in the cloud: [![Binder](https://mybinder.org/badge_l
 * You can use [psetpartners.mit.edu](https://psetpartners.mit.edu/) to help you find classmates to chat with.
 
 **Final Projects**: The final project will explore a numerical topic of your choice that is related to the course material but has not been covered in depth during lectures or problem sets. The project consists of two components:
-* **Proposal (due by 11:59 PM, Sunday, April 6)**: A one-page summary outlining your chosen topic and its relevance.
+* **Proposal (due by 11:59 PM, Sunday, April 13)**: A one-page summary outlining your chosen topic and its relevance.
 * Final submission: You may choose one of the following formats:
     * **Technical report (5–15 pages)** reviewing an interesting numerical algorithm not covered in the course, due by **11:59 PM, Thursday, May 15**.
-    * **Technical presentation (35-minute in-class lecture)**. Limited spots are available, and you may collaborate with one other classmate.
+    * **Technical presentation (35-minute in-class lecture)**. Limited spots are available, and you may collaborate with one other classmate. You need to submit your code
 
-Further details will be provided as the semester progresses.
+See [this page](https://github.com/mitmath/18335/blob/master/project/final_project_spring2025.pdf) for more details.
 
 Assignments
 ------------
 
 * [Pset 1](https://github.com/mitmath/18335/blob/master/psets/pset1.pdf) is due on March 2 at 11:59pm.
 
-* Pset 2 is due on TBD at 11:59pm.
+* [Pset 2](https://github.com/mitmath/18335/blob/master/psets/pset2.pdf) is due on April 6 at 11:59pm.
 
 * Pset 3 is due on TBD at 11:59pm.
 
@@ -128,3 +128,48 @@ Lecture Summaries and Handouts
 * Successive over-relaxation (SOR) and optimal relaxation parameter
 
 **Further Reading:** Y. Saad, Iterative Methods for Sparse Linear Systems, [Chapter 4](https://epubs.siam.org/doi/10.1137/1.9780898718003.ch4). [Lecture notes 10](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture10.pdf).
+
+### Lecutre 11 (March 10)
+
+* Review basics of eigenvalue problems
+* Schur factorization
+* Stability/perturbation theory of eigenvalue problems
+
+**Further Reading:** L. N. Trefethen, Lectures 24, and 25, [Lecture notes 11](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture11.pdf)
+
+### Lecutre 12 (March 12)
+
+* Power methods
+* Rayleigh quotient methods
+* Simultaneous power iteration
+
+**Further Reading:**L. N. Trefethen, Lectures 27, and 28, [Lecture notes 12](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture12.pdf).
+
+### Lecutre 13 (March 17)
+
+* QR algorithm
+* Upper Hessenberg factorization
+* QR algorithm with shift
+
+**Further Reading:**L. N. Trefethen, Lectures 26, and 29, [Lecture notes 13](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture13.pdf).
+
+### Lecutre 14 (March 19)
+
+* Other eigenvalue algorithms
+* Computing SVD
+
+**Further Reading:** L. N. Trefethen, Lectures 30 and 31, [Lecture notes 14](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture14.pdf) 
+
+### Lecutre 15 (March 31)
+
+* Iterative methods for sparse matrices, and Krylov subspaces
+* Galerkin condition and Rayleigh-Ritz projection for eigenvalue problems
+* Arnoldi's iteration for finding orthonormal basis in Krylov subspaces
+
+**Further Reading:** L. N. Trefethen, Lectures 30 and 31, [Lecture notes 15](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture15.pdf) 
+
+### Lecture 16 (April 2)
+
+* Arnoldi's method for Hermitian matrices, and Lanczos algorithm for sparse eigenvalue problems
+* Convergence of Lanczos algorithm and Arnoldi's method
+**Further Reading:** L. N. Trefethen, Lectures 33 and 34, [Lecture notes 16](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture16.pdf). You can read about the [implicitly restarted Arnoldi iteration](https://github.com/mitmath/18335/blob/master/notes/restarting-arnoldi.pdf) and the [bells and whistles](https://epubs.siam.org/doi/10.1137/S0895479895281484). that made it [a standard iterative eigensolver](https://epubs.siam.org/doi/book/10.1137/1.9780898719628) for non-Hermitian sparse matrices.
