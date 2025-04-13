@@ -1,0 +1,40 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{enumitem}
+\usepackage[authoryear]{natbib}
+\usepackage{mdframed}
+\usepackage[margin=1in]{geometry}
+
+\title{\textbf{Simon Opsahl}\\18.335: Introduction to Numerical Methods\\Final Project Proposal\\Nested Dissection to Reduce Graph Fill-in}
+
+\begin{document}
+
+\maketitle
+
+\section*{Motivations}
+When doing Gaussian elimination in order to solve sparse linear systems, there is the chance of a elimination step creating a new non-zero value, or a fill-in. As a result, more intermediate computation is necessary to solve the system, reducing the benefits gained from sparsity. Finding the best combination of row and column permutations is NP-complete, so there is a need to develop algorithms that approximate partitioning well [Khaira 1992]. 
+
+
+In comes nested dissection. These algorithms use the adjacency graph and a divide and conquer approach in order to best partition the graph and recurse on its subcomponents. Much of the work originated in the 1980s with the general approach from Lipton and Tarjan [Lipton 1980] and a modified approach from Gilbert [Gilbert 19080].
+
+\section*{My Algorithm}
+Even though not much has changed since the late 1990s in the implentation, there was a recent paper that proposed a new implementation that claimed to outperform METIS and SCOTCH, which are the SoTA used in MATLAB and other software [Ost 2020]. They propose a preprocessing improvement over METIS originating from more recent discoveries in graph partitioning and data reduction. They benchmark against METIS on a number of tests, but I plan to isolate the testing to social networks and road networks because those were the systems they reported the highest speedups.
+
+I will attempt to replicate their results by using number of non zeros (or fill-in) as the metric. Because it is a preprocessing improvement, it is hard to connect to efficiency, but performance with real-world tasks on fill-in directly tests the efficacy of the tasks. 
+
+\section*{References}
+\begin{itemize}
+    \item Khaira, M. S., Miller, G. L., \& Shefﬂer, T. J. (1992). Nested Dissection: A survey and comparison of various nested dissection algorithms.
+    \item Lipton, R. J., \& Tarjan, R. E. (1980). Applications of a Planar Separator Theorem. SIAM Journal on Computing, 9(3), 615–627. https://doi.org/10.1137/0209046
+    \item Gilbert, J. R., Hutchinson, J. P., \& Tarjan, R. E. (1984). A separator theorem for graphs of bounded genus. Journal of Algorithms, 5(3), 391–407. https://doi.org/10.1016/0196-6774(84)90019-1
+    \item George, A. (1973). Nested Dissection of a Regular Finite Element Mesh. SIAM Journal on Numerical Analysis, 10(2), 345–363. https://doi.org/10.1137/0710032
+    \item Karypis, G., \& Kumar, V. (1998). A Fast and High Quality Multilevel Scheme for Partitioning Irregular Graphs. SIAM Journal on Scientific Computing, 20(1), 359–392. https://doi.org/10.1137/S1064827595287997
+    \item Ost, L., Schulz, C., \& Strash, D. (2020). Engineering Data Reduction for Nested Dissection (No. arXiv:2004.11315). arXiv. https://doi.org/10.48550/arXiv.2004.11315
+
+
+
+\end{itemize}
+\end{document}
