@@ -48,7 +48,7 @@ Assignments
 
 * [Pset 2](https://github.com/mitmath/18335/blob/master/psets/pset2.pdf) is due on April 6 at 11:59pm.
 
-* Pset 3 is due on TBD at 11:59pm.
+* [Pset 3](https://github.com/mitmath/18335/blob/master/psets/pset3.pdf) is due on May 4 at 11:59pm.
 
 
 Lecture Summaries and Handouts
@@ -186,4 +186,17 @@ Lecture Summaries and Handouts
 
 * GMRES as a projection problem and a least-square problem
 * Convergence of GMRES
-**Further Reading:**L. N. Trefethen, Lectures 35, [Lecture notes 18](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture18.pdf).
+**Further Reading:** L. N. Trefethen, Lectures 35, [Lecture notes 18](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture18.pdf).
+
+### Lecture 19 (April 14)
+
+* Steepest Gradient Descent
+* Conjugate Gradient (CG)
+* Convergence of CG
+**Further Reading:** L. N. Trefethen, Lectures 38, [Introduction to CG](https://github.com/mitmath/18335/blob/master/notes/painless-conjugate-gradient.pdf), [Lecture notes 19](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture19.pdf).
+
+### Lecture 20 (April 16)
+
+* Preconditioning
+* Biorthogonalization methods
+**Further Reading:** L. N. Trefethen, Lectures 39, [Lecture notes 20](https://github.com/mitmath/18335/blob/master/notes/18.335_Lecture20.pdf), [Notes on different options for solving Ax=b](https://github.com/mitmath/18335/blob/master/notes/solver-options.pdf).
