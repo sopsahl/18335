@@ -1,6 +1,13 @@
 \documentclass[final]{siamart250211}
 
-\title{An exploration of nested dissection for sparse matrix operations}
+\usepackage{amsfonts}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{algorithmic}
+\usepackage{mathtools}
+
+
+\title{An exploration of nested dissection for sparse linear systems}
 
 \author{Simon Opsahl (\email{sopsahl@mit.edu})\thanks{MIT, Cambridge, MA. 18.335 SP25: Intro to Numerical Methods.}}
 
@@ -11,38 +18,278 @@
 % ABSTRACT
 
 \begin{abstract}
-...
+This work is a replication and analysis of six data reduction techniques used to improve the performance of METIS on the minimum fill-in problem. By relying on recent developments in graph partitioning theory, we improve upon the runtime and performance of a well-accepted standard for approximating the minimum fill-in ordering for Cholesky decomposition of highly sparse matrices. We evaluate fill-in, algorithm runtime, operation count, and volume of the graph reduction across five different data reduction strategies. 
 \end{abstract}
 
 
 % KEYWORDS
 
 \begin{keywords}
-example, \LaTeX
+METIS, Graph Partitioning, Nested Dissection,
+Sparse Linear Solvers, Cholesky Factorization
 \end{keywords}
 
 
 \section{Introduction}
 \label{sec:introduction}
 
-\section{Background}
-\label{sec:background}
+
+
+ In linear systems, there is a need for efficient solvers of the $Ax=b$ problem. Cholesky decomposition ($A = LL^\ast$) is one such solution for Hermitian positive-definite matrices. In this decomposition, you turn the full matrix into its lower triangular equivalent in $O(\frac{n^3}{3})$ \cite{TiWa67}. The linear system can then be solved by a forward computation of $Ly = b$ and then a backwards computation of $L^\ast x = y$, both $O(n^2)$ because of the triangularity of the matrix.
+ 
+ One class of linear systems that requires special consideration is graph-based linear systems like road networks and social networks. These systems often have very large $n$ and are highly sparse. With a sparse $A$, both complexities of the Cholesky decomposition and computation may drop, but such improvement is heavily dependent on the sparsity structure \cite{TiWa67}. In addition, Cholesky decomposition may naively introduce additional non-zero elements on any step of the elimination process. In the worst-case, this can result in a fully dense $L$ as a decomposition of a highly sparse $A$. 
+ 
+It has been shown that for each sparse matrix $A$, there exists an optimal ordering of rows or columns such that $PAP^T = LL^\ast$ minimizes the fill-in. The search for this optimal $P$ is NP-complete, however, and thus there exists the need for efficient and accurate approximations of the optimal ordering \cite{Ya81}. Fortunately, there has been a wide corpus of research into graph partitioning algorithms. If you view each row/column as a node, and each non-zero element as an undirected edge, then the optimal permutation in the minimum fill-in problem is a direct analogue to the optimal elimination ordering in a undirected graph. When a node is eliminated, an edge is added between its neighbors to form a clique. The property you minimize over is the number of edges added to the graph. 
+
+As the minimal fill-in problem is NP-complete, there have been a host of accurate heuristics used to create an elimination ordering. Developments began with the \textit{minimum degree algorithm}, where the node with the minimum degree is eliminated on each step \cite{TiWa67, As95}. The computational cost of such an algorithm is high, because there is a lot of time spent on updating node degree. As a result, newer algorithms were developed. George et al. introduced the concept of \textit{nested dissection}, where a node separator splits the graph into subgraphs that are then recursively partitioned \cite{Ge73, KhMiShXX}. The algorithm still makes use of the minimum degree heuristic when the subgraphs are small \cite{OsScSt20, GeLi89}.
+
+Since the initial research into nested dissection, there have been a number of improvements in the algorithm to increase parallelism \cite{LaKa15, KaKu98}. The current state of the art is METIS, introduced in 1998 by Karypis and Kumar \cite{KaKu98}, which uses a multilevel approach. In this work, we use the PyMetis \cite{PyMetis2022} Python package developed in 2022. 
+
+Not much has changed in the field of nested dissection and solutions for the minimum fill-in problem since the development of METIS, even though there have been a number of improvements in graph partitioning techniques \cite{OsScSt20}. In this work, we aim to replicate Ost et al. They utilize data reduction techniques found in graph partitioning theory to reduce the graph that METIS operates on, improving both the runtime and fill-in of the overall ordering. 
+
+
+ 
 
 \section{Algorithm}
-\label{sec:algorithm}
+\label{sec:d}
+Ost et al. \cite{OsScSt20} introduces five data reduction steps that can improve the overall speed and fill-in of METIS. The steps are meant to take advantage of exact eliminations, exact contractions, inexact eliminations, and inexact contractions in order to reduce the size of the graph prior to METIS partitioning. By reducing the size of the graph, the work that is done by METIS is reduced, and thus inclusion of a collection of the proposed preprocessing steps is shown to lead to an improvement in overall runtime of the algorithm. Improvement in fill-in is likely a result of the reliability of the data reduction rules that are chosen.
+
+For the data reduction rules, we rely on the following definitions given a graph $G=(V, E)$:
+\begin{itemize}
+    \item The open neighborhood ($\Gamma(u)$) of a node $u\in V$ is defined as the set of neighbors of $u$. In other words, $\Gamma(u) \coloneq \{v: (u, v) \in E\}  $.
+    \item The closed neighborhood ($\Gamma[u]$) of a node $u\in V$ is defined as the set of neighbors of $u$ along with $u$ itself. In other words, $\Gamma[u] \coloneq \{v: (u, v) \in E\} \cup \{u\} $.
+    \item A clique is defined as any set of nodes $C \subseteq V$ in which there exists an edge between every node. In other words, $\forall u, v \in C, (u, v) \in E$.
+    \item The degree of a node (deg($u$)) is defined as the number of neighbors. In other words, deg($u) \coloneq |\Gamma(u)|$.
+    \item A subgraph $G_W$ of a set of vertices $W \subseteq V$ is defined as the set of nodes in $W$ paired with the set of edges between member nodes of $W$. In other words, $G_W = (W, E_W)$, where $E_W \coloneq \{(u, v): u, v \in W \land (u, v) \in E\}$.
+    \item For a node $u$ to be \textit{eliminated}, it is added to the elimination order $\sigma$, then all of its edges are removed from the graph. In addition, edges are added to the graph until the neighbors of $u$ form a clique. The number of edges added is the fill-in. In other words, $\sigma \leftarrow \sigma u$ and $G \leftarrow (V\setminus\{u\}, E \cup \{(v, w) : v, w \in \Gamma(u) \} \setminus\{(u, v) : v \in \Gamma(u) \}$.
+    \item For a set of nodes $W\subseteq V$ to be \textit{contracted}, all nodes in $W$ are reduced to one node $w$, and all outgoing edges from $G_W$ are now edges of $w$. In other words, $G \leftarrow (V \cup \{w\}\setminus W, E \cup \{(w, v) : v\notin W \land \exists u\in W, (u, v)\in E \} \setminus E_W)$. In addition, when constructing the final elimination ordering, nodes that are contracted can be eliminated together.
+\end{itemize}
+
+\subsection{Simplicial Reduction}
+Simplicial reduction is an exact elimination rule that relies on the fact that any node $u$ whose open neighborhood is a clique can be eliminated first. In practice, this can be a very costly operation, as iterating through the set of all pairs of neighbors of all nodes is upper bounded by $O(n^3)$. As a result, Ost et al. enforce a degree threshold $\Delta$. When scanning through the set of nodes, we only check for cliques if the degree of $u$ is less than or equal to $\Delta$. This significantly reduces the time complexity to $O(n\Delta^2)$. This rule is exact because elimination of any node with a neighborhood clique results in zero fill-in. As a result, there exists a minimal elimination ordering where $u$ is eliminated first. The implementation can be found in \cref{alg:simplicial}.
+
+\begin{algorithm}
+\caption{Simplicial Reduction}
+\label{alg:simplicial}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\STATE{Degree Threshold: $\Delta$}
+\FORALL{$u \in V$}
+\IF{deg($u$) $\le \Delta$}
+\STATE{Given the subgraph $G_{\Gamma(u)}$}
+\IF{$|E_{\Gamma(u)}| ==$ deg($u)\cdot$(deg($u) - 1$)$/ 2$}
+\STATE{Eliminate $u$}
+\ENDIF
+\ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Indistinguishable Reduction}
+Indistinguishable reduction contracts two nodes $u$ and $v$ if $\Gamma[u] = \Gamma[v]$. This reduction relies on the observation that $u$ and $v$ are essentially indistinguishable in an elimination ordering. As a result, they can be eliminated together without penalty. In practice, you can save unnecessary comparisons between neighborhoods by constructing a hash of $u$ equal to the sum of some function $f(v)$ over $v\in \Gamma[u]$. This requires iterating through the $m$ edges. Then, you only compare neighborhoods of two nodes if their hashes are equal. In the worst case this is $O(m + m\cdot\deg(v))$. An implementation can be found in \cref{alg:indistinguishable}.
+
+\begin{algorithm}
+\caption{Indistinguishable Reduction}
+\label{alg:indistinguishable}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\STATE{Initialize $H$}
+\FORALL{$u \in V$}
+    \STATE{$H[u] \leftarrow \sum_{v \in \Gamma[u]} f(v)$}
+\ENDFOR
+
+\FORALL{$(u, v) \in E$}
+    \IF{$H[u] = H[v]$}
+        \IF{$\Gamma[u] = \Gamma[v]$}
+            \STATE{Contract $u$ and $v$ into new node $w$}
+            \STATE{Update $G$}
+        \ENDIF
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Twin Reduction}
+Twin reduction is an exact data reduction technique that relies on a very similar observation to indistinguishable reduction. Namely, a set of twins, or nodes that have the same open neighborhood, can be eliminated together in an optimal ordering. The cost of creating a clique among the neighbors of a node is only paid by one twin. Afterwards, the twin is simplicial and can be immediately eliminated. In practice, we must construct a hash table just as with indistinguishable reduction. Then, sort the hash and compare adjacent entries. If the hash and degree are identical, then check the neighbors. This is in the worst case the cost of identical degree and hash, or $O(mn)$. An implementation can be found in \cref{alg:twin}.
+
+
+\begin{algorithm}
+\caption{Twin Reduction}
+\label{alg:twin}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\STATE{Initialize $H$}
+\FORALL{$u \in V$}
+    \STATE{$H[u] \leftarrow \sum_{v \in \Gamma(u)} \text{hash}(v)$}
+\ENDFOR
+\STATE{Sort $H\rightarrow H'$}
+\FOR{$h_i, h_{i+1} \in H'$}
+\IF{$\deg({h_i}) = \deg({h_{i+1}})$ and $H'[h_i] = H'[h_{i+1}]$}
+     \IF{$\Gamma(h_i) = \Gamma(h_{i+1})$}
+            \STATE{Contract $h_i$ and $h_{i+1}$ into new node $w$}
+            \STATE{Update $G$}
+    \ENDIF
+\ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Path Compression}
+Path compression is an exact data reduction technique relying on the observation that any path of degree-2 nodes can be eliminated together. The order of elimination depends on which neighbor is eliminated first, however. In practice, you can contract nodes by iterating over the adjacent nodes until a degree-2 node is not encountered. Because this requires walking each edge at most once, path compression is upper-bounded by $O(m)$. An implementation can be found in \cref{alg:pathcompression}.
+
+\begin{algorithm}
+\caption{Path Compression}
+\label{alg:pathcompression}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\STATE{Initialize $R \leftarrow \emptyset$}
+\FORALL{$u \in V$}
+    \IF{$\deg(u) = 2$ and $u \notin R$}
+        \STATE{Initialize $P \leftarrow [u]$}
+        \STATE{Initialize $S=\Gamma(u)$}
+        \WHILE{$S$}
+            \STATE{$x = S.$pop()}
+            \IF{$\deg(x) = 2$ and $x \notin R$}
+             \STATE{$P \leftarrow P + [x]$}
+             \STATE{$S \leftarrow S \cup \Gamma(x)$}
+            \ENDIF
+        \ENDWHILE
+
+        \IF{$|P| > 1$}
+            \STATE{Contract $P$}
+        \ENDIF
+        \STATE{$R \leftarrow R \cup P$}
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Degree 2 Elimination}
+
+Degree-2 elimination is an inexact reduction rule that relies on the fact that eliminating a degree-2 node is exact if that node is not a separator, or is a part of a cycle. Empirically found to be worthwhile, degree-2 elimination can approximate the minimum ordering of $G$ assuming the majority of nodes reside in cycles, and the penalty if not is low. The cost of degree-2 elimination is just the cost of iterating through the nodes until a degree-2 node is not encountered. As a result, it is upper bounded by $O(n^2)$. An implementation can be found in \cref{alg:degree2}.
+
+\begin{algorithm}
+\caption{Degree-2 Elimination}
+\label{alg:degree2}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\FORALL{$u \in V$}
+    \IF{$\deg(u) = 2$}
+        \STATE{Eliminate $u$}
+        \STATE{Restart 2.4}
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Triangle Contraction}
+Triangle contraction is an inexact reduction rule that relies on the fact that if there are two adjacent nodes $u$ and $v$ both with degree 3 and $|\Gamma(u)\cap\Gamma(v)| \ge 1$, then eliminating $u$ and $v$ results in a fill-in of only two edges. In practice, this requires walking an edge at most once, and thus we are upper bounded by $O(m)$. The implementation can be found in \cref{alg:triangle}.
+
+\begin{algorithm}
+\caption{Triangle Contraction}
+\label{alg:triangle}
+\begin{algorithmic}
+\STATE{Graph: $G=(V, E)$}
+\STATE{Initialize $R \leftarrow \emptyset$}
+\FORALL{$u \in V$}
+    \IF{$\deg(u) = 3$ and $u \notin R$}
+        \STATE{Initialize $P\leftarrow \{u\},S \leftarrow [u]$}
+        \WHILE{$S$}
+            \STATE{$x \leftarrow$ $S$.pop()}
+            \IF{$\deg(x) = 3$ and $x \notin R$}
+                \STATE{$R \leftarrow R \cup \{x\}$}
+                \STATE{$P \leftarrow P \cup \{x\}$}
+                \FORALL{$y \in \Gamma(x)$}
+                    \IF{$\deg(y) = 3$ and $y \notin R$ and $|\Gamma(x) \cap \Gamma(y)| \ge 1$}
+                        \STATE{$S\leftarrow S +[y]$}
+                    \ENDIF
+                \ENDFOR
+            \ENDIF
+        \ENDWHILE
+        \IF{$|P| > 1$}
+            \STATE{Contract $P$}
+        \ENDIF
+    \ENDIF
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
 
 \section{Methods}
 \label{sec:methods}
+In our methodology, we use Python to write and profile all of the data reduction techniques. The testing pipeline is as follows:
+\subsection{Load the graph} We tested on three large road networks from the SNAP dataset \cite{snapnets} because Ost et al. reported their highest improvements on road networks \cite{OsScSt20}. We relied on networkx \cite{HaScSw08} for graph storage and manipulation. The three road networks tested are as follows: roadNet-TX, roadNet-CA, and roadNet-PA.
+\subsection{Transform the graph} We then transformed the graph with a combination of any of the six data reduction techniques described in \cref{sec:d}. Within this step, we recorded the number of reductions each technique contributed to the overall total. In addition, we recorded a rough estimate of the operational cost of each reduction dependent on the degree of nodes and the loop ordering. In our experiments, we tested the following five preprocessing algorithms to replicate results from Ost et al. \cite{OsScSt20}:
+\begin{itemize}
+    \item METIS: No preprocessing.
+    \item SITP12: Simplicial reduction with a degree threshold of 12, followed by indistinguishable and twin reductions, followed by path compression.
+    \item SIDTr12: Simplicial reduction with a degree threshold of 12, followed by indistinguishable reduction, followed by degree-2 elimination, followed by triangle contraction.
+    \item SITD6: Simplicial reduction with a degree threshold of 6, followed by indistinguishable and twin reductions, followed by degree-2 elimination.
+    \item SD18: Simplicial reduction with a degree threshold of 18 followed by degree-2 elimination.
+\end{itemize}
+
+
+\subsection{Run METIS} We then used the reduced graph as input to a nested dissection algorithm from PyMetis \cite{PyMetis2022}. We computed the elimination order and profiled the runtime of METIS over $n=10$ iterations of the algorithm. The elimination order of the reduced graph was then used to find the overall elimination order of the original graph by combining the eliminated nodes and expanding the contracted nodes when appropriate. For all but path compression, contracted nodes could be expanded as is, but nodes reduced by path compression were expanded in order of which neighbor appeared first in the elimination order.
+
+
+\subsection{Measure Fill-in} Finally, we measured the fill-in of the Cholesky decomposition. We used the Laplacian matrix of the graph permuted by the elimination order. Then, we used the Cholesky factorization from scikit-sparse \cite{2020SciPy-NMeth} to find $L$. Lastly, we computed fill-in as the number of nonzeros in $L$ compared to the Laplacian.
+
 
 \section{Results}
 \label{sec:results}
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=10cm]{sopsahl/project/report/runtimePA.png}
+  \caption{METIS runtime over each preprocessing method for roadNet-PA.}
+  \label{fig:runtimePA}
+\end{figure}
+
+
+
+Our results replicated the results found in Ost el al. \cite{OsScSt20}. We found that as the number of reductions increased, the overall runtime of METIS decreased, as seen in \cref{fig:runtimePA}. Note that the cost of METIS runtime does not account for the data reduction cost, but the hope is that optimized kernels may be able to take advantage of the up to $50\%$ speedups we encountered.
+
+
+
+We also found that degree-2 elimination and simplicial reduction shared the largest fraction of reductions among all preprocessing steps, as seen in \cref{fig:reduction}. Interestingly, indistinguishable and twin reductions did not significantly contribute to the overall number of reductions, even though their operation count was a sizeable portion of the total estimated operations. 
+
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=10cm]{sopsahl/project/report/reduction.png}
+  \caption{Reduction count for each data reduction technique over each preprocessing method for each test graph.}
+  \label{fig:reduction}
+\end{figure}
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=10cm]{sopsahl/project/report/operations.png}
+  \caption{Operation count for each data reduction technique over each preprocessing method for each test graph.}
+  \label{fig:operations}
+\end{figure}
+
+Finally, we found that the fill-in of each of the preprocessing algorithms was up to $2\%$ less than METIS in all but one case, as seen in \cref{fig:fillin}. This is consistent with the findings of Ost et al.
+
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=10cm]{sopsahl/project/report/fillin.png}
+  \caption{Normalized fill-in for each preprocessing method for each test graph.}
+  \label{fig:fillin}
+\end{figure}
+
+
+
+
 \section{Discussion}
 \label{sec:discussion}
-
-
+Ultimately, the goal of this review was to recreate the results from Ost et al. \cite{OsScSt20}. This goal was accomplished. We were able to show that preprocessing can lead to improvements in METIS performance and runtime. As a result, it is clear that current implementations of nested dissection have much room to improve in light of recent advances in graph partitioning. The minimum fill-in problem remains highly relevant, as computations over sparse networks are found in a number of domains, including modern graph neural networks \cite{Zhou2021GNNReview}. Additional work is required to explore this domain and discover additional improvements, many of which may already exist in graph theory.  
 
 \bibliographystyle{siamplain}
 \bibliography{references}
+
+\section*{Appendix}
+
+All code and visualization can be found at \url{https://github.com/sopsahl/preMETIS}. A README in the top level describes use of the scripts and profiling tools. 
 
 \end{document}
